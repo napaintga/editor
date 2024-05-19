@@ -15,12 +15,14 @@ win.setWindowTitle("Easy Editor")
 lb_image= QLabel("Картинка")
 btn_dir = QPushButton("Папка")
 lw_files = QListWidget()
-
+btn_bw = QPushButton("Чорно-білий")
 btn_left = QPushButton("Ліво")
 btn_right = QPushButton("Право")
 btn_flip =QPushButton('Відзеркалити')
 btn_sharp = QPushButton('Різкість')
 btn_blur = QPushButton('бЛЮР')
+_23yu= "12"
+
 
 btn_sharp.setStyleSheet('''
     QPushButton {
@@ -69,7 +71,7 @@ btn_right.setStyleSheet('''
 ''')
 
 row = QHBoxLayout()
-
+row.addWidget(btn_bw)
 row.addWidget(btn_left)
 row.addWidget(btn_right)
 row.addWidget(btn_flip)
@@ -117,17 +119,43 @@ class ImageProcessor:
     def __init__(self):
         self.image = None
         self.filename = None
-        self.save_dir = "Modified/"
+        self.save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Modified/")
 
+    def do_bw(self):
+        self.image = self.image.convert("L")
+        self.save_image()
+    def do_90(self):
+        self.image = self.image.transpose(Image.ROTATE_90)
+        self.save_image()
+    def do_270(self):
+        self.image= self.image.transpose(Image.ROTATE_270)
+        self.save_image()
+        
+    def do_flip(self):
+        self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
+        self.save_image()
+    def do_sahp(self):
+        self.image = self.image.filter(ImageFilter.SHARPEN)
+        self.save_image()
+    def do_blur(self):
+        self.image = self.image.filter(ImageFilter.BLUR)
+        self.save_image()
+        
     def load_image(self, filename):
         self.filename = filename
         fullname = os.path.join(workdir, filename)
         self.image = Image.open(fullname)
 
-
-    def show_image(self):
+    def save_image(self):
+        if not os.path.exists(self.save_dir):
+            os.mkdir(self.save_dir)
+        image_path = os.path.join(self.save_dir, self.filename)
+        self.image.save(image_path)
+        self.show_image(image_path)
+            
+    def show_image(self,path):
         lb_image.hide()
-        pixmapimage = QPixmap(os.path.join(workdir, self.save_dir, self.filename))
+        pixmapimage = QPixmap(path)
         w, h = lb_image.width(), lb_image.height()
         pixmapimage = pixmapimage.scaled(w, h, Qt.KeepAspectRatio)
         lb_image.setPixmap(pixmapimage)
@@ -136,11 +164,20 @@ class ImageProcessor:
 workimage = ImageProcessor()
 
 def show():
-    if lw_files.currentRow() >=0:
-        filename= lw_files.currentItem().text()
-        workimage.load_image(filename)
-        workimage.show_image()
+    filename= lw_files.currentItem().text()
+    workimage.load_image(filename)
+    full_path = os.path.join(workdir,filename)
+    workimage.show_image(full_path)
+    
 lw_files.currentRowChanged.connect(show)
+btn_left.clicked.connect(workimage.do_90)
+btn_right.clicked.connect(workimage.do_270)
+btn_flip.clicked.connect(workimage.do_flip)
+btn_blur.clicked.connect(workimage.do_blur)
+btn_bw.clicked.connect(workimage.do_bw)
+btn_sharp.clicked.connect(workimage.do_sahp)
+win.resize(600,550)
+
 win.show()
 app.exec_()
 
